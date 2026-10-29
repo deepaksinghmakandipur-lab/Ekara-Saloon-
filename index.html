@@ -55,7 +55,13 @@
           <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <h1 class="font-serif text-lg font-bold tracking-wider text-rose-100">EK<span class="px-1.5 py-0.5 border border-rose-300 rounded-tl-xl rounded-br-xl text-white mx-0.5">A</span>RA <span class="text-xs font-sans font-semibold text-rose-300">&amp; ACADEMY</span></h1>
         </div>
-        <p class="text-[10px] text-stone-300">Near Office Chauraha, Awas Vikas, Kanpur - 208021 • 📞 <span class="text-amber-300 font-bold">8840647450</span></p>
+        <div class="flex items-center flex-wrap gap-x-2 gap-y-1 mt-0.5">
+          <p class="text-[10px] text-stone-300">Near Office Chauraha, Awas Vikas, Kanpur - 208021 • 📞 <span class="text-amber-300 font-bold">8840647450</span></p>
+          <a href="https://www.instagram.com/ekara_beautysalon/" target="_blank" class="inline-flex items-center gap-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-full shadow-sm hover:opacity-90 active:scale-95 transition-all">
+            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            <span>@ekara_beautysalon</span>
+          </a>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="openRateManager()" class="p-2 rounded-lg bg-stone-800 text-stone-200 hover:text-white border border-stone-700 text-xs font-medium flex items-center gap-1">
@@ -69,7 +75,7 @@
       </div>
     </div>
 
-    <!-- CHAIR / TABLE ALLOTMENT BAR (Restaurant Style) -->
+    <!-- CHAIR / TABLE ALLOTMENT BAR -->
     <div class="bg-[#1c222d] px-3 py-2 border-t border-[#822a36] flex items-center gap-2 overflow-x-auto no-scrollbar">
       <span class="text-[11px] uppercase tracking-wider text-stone-400 font-semibold shrink-0 pl-1">Chairs:</span>
       <div id="chairSelector" class="flex items-center gap-2"></div>
@@ -162,33 +168,62 @@
             <span class="font-bold text-stone-800" id="calcBaseTotal">₹0</span>
           </div>
 
-          <!-- Extra Custom Discount Selector -->
-          <div class="pt-2 border-t border-rose-100 flex items-center justify-between gap-2">
-            <label class="text-xs font-semibold text-rose-900">Special Discount:</label>
-            <div class="flex items-center gap-1.5">
-              <select id="discountSelect" onchange="calculateFinalBill()" class="bg-white border border-rose-200 rounded-lg px-2 py-1 text-xs font-semibold text-stone-800 focus:outline-none">
-                <option value="0">0% None</option>
-                <option value="5">5% OFF</option>
-                <option value="10">10% OFF</option>
-                <option value="15">15% OFF</option>
-                <option value="20">20% OFF</option>
-                <option value="25">25% OFF</option>
-                <option value="custom">Custom (₹)</option>
-              </select>
-              <input type="number" id="customDiscountRupees" oninput="calculateFinalBill()" placeholder="₹ Disc" class="w-16 bg-white border border-rose-200 rounded-lg px-2 py-1 text-xs hidden font-bold text-rose-800">
+          <!-- Enhanced Discount Section with % and ₹ Icons -->
+          <div class="pt-2.5 border-t border-rose-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-rose-950 flex items-center gap-1">
+                <span>Special Discount:</span>
+              </span>
+              <!-- Toggle Mode: % or ₹ -->
+              <div class="inline-flex rounded-lg p-0.5 bg-rose-200/60 border border-rose-300 text-[11px] font-bold">
+                <button type="button" onclick="setDiscountMode('pct')" id="btnDiscModePct" class="px-2.5 py-1 rounded-md flex items-center gap-1 transition-all bg-white text-rose-900 shadow-sm">
+                  <span class="w-3.5 h-3.5 rounded-full bg-rose-700 text-white text-[9px] flex items-center justify-center font-black">%</span>
+                  <span>% Percent</span>
+                </button>
+                <button type="button" onclick="setDiscountMode('inr')" id="btnDiscModeInr" class="px-2.5 py-1 rounded-md flex items-center gap-1 transition-all text-stone-700 hover:text-stone-900">
+                  <span class="w-3.5 h-3.5 rounded-full bg-amber-600 text-white text-[9px] flex items-center justify-center font-black">₹</span>
+                  <span>₹ Rupees</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Percentage Option View -->
+            <div id="pctDiscountView" class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" onclick="setQuickPct(0)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="0">0%</button>
+              <button type="button" onclick="setQuickPct(5)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="5">5%</button>
+              <button type="button" onclick="setQuickPct(10)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="10">10%</button>
+              <button type="button" onclick="setQuickPct(15)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="15">15%</button>
+              <button type="button" onclick="setQuickPct(20)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="20">20%</button>
+              <button type="button" onclick="setQuickPct(25)" class="quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700" data-pct="25">25%</button>
+              <div class="flex items-center gap-1 ml-auto">
+                <input type="number" id="customPctInput" oninput="setCustomPct(this.value)" placeholder="Custom %" min="0" max="100" class="w-20 bg-white border border-rose-300 rounded-lg px-2 py-1 text-xs font-bold text-rose-900 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Rupees Direct Amount Option View -->
+            <div id="inrDiscountView" class="hidden flex items-center gap-2">
+              <div class="relative flex-1">
+                <span class="absolute left-2.5 top-1.5 font-extrabold text-amber-700 text-xs">₹</span>
+                <input type="number" id="directInrDiscountInput" oninput="calculateFinalBill()" placeholder="Enter Rupee Discount (e.g. 100, 250, 500)" class="w-full pl-6 pr-2 py-1.5 bg-white border border-rose-300 rounded-lg text-xs font-bold text-rose-900 focus:outline-none focus:ring-1 focus:ring-rose-500">
+              </div>
+              <div class="flex items-center gap-1 text-[11px] font-bold">
+                <button type="button" onclick="setQuickInr(100)" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-stone-700 hover:bg-rose-50">+₹100</button>
+                <button type="button" onclick="setQuickInr(200)" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-stone-700 hover:bg-rose-50">+₹200</button>
+                <button type="button" onclick="setQuickInr(500)" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-stone-700 hover:bg-rose-50">+₹500</button>
+              </div>
             </div>
           </div>
 
           <div class="flex items-center justify-between text-xs text-rose-700 font-medium">
             <span>You Saved (Discount):</span>
-            <span id="calcDiscountAmount">-₹0</span>
+            <span id="calcDiscountAmount">-₹0 (0%)</span>
           </div>
 
           <div class="pt-2 border-t border-rose-200 flex items-center justify-between">
             <span class="text-sm font-extrabold text-stone-900">NET PAYABLE:</span>
             <span class="text-xl font-extrabold text-rose-900" id="calcNetPayable">₹0</span>
           </div>
-          <p class="text-[10px] text-stone-400 text-right italic">*Always rounded in clean whole rupees.</p>
+          <p class="text-[10px] text-stone-400 text-right italic">*Strict whole rupees only (No decimals).</p>
         </div>
       </div>
 
@@ -225,7 +260,7 @@
     </div>
   </div>
 
-  <!-- MODAL: RATE MANAGER (EDIT RATES PERMANENTLY) -->
+  <!-- MODAL: RATE MANAGER -->
   <div id="rateManagerModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white w-full max-w-md rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between">
@@ -521,6 +556,67 @@
       document.getElementById("barTotalAmount").innerText = `₹${Math.round(total)}`;
     }
 
+    let currentDiscountMode = 'pct'; // 'pct' or 'inr'
+
+    function setDiscountMode(mode) {
+      currentDiscountMode = mode;
+      const btnPct = document.getElementById("btnDiscModePct");
+      const btnInr = document.getElementById("btnDiscModeInr");
+      const viewPct = document.getElementById("pctDiscountView");
+      const viewInr = document.getElementById("inrDiscountView");
+
+      if (mode === 'pct') {
+        btnPct.className = "px-2.5 py-1 rounded-md flex items-center gap-1 transition-all bg-white text-rose-900 shadow-sm";
+        btnInr.className = "px-2.5 py-1 rounded-md flex items-center gap-1 transition-all text-stone-700 hover:text-stone-900";
+        viewPct.classList.remove("hidden");
+        viewInr.classList.add("hidden");
+      } else {
+        btnInr.className = "px-2.5 py-1 rounded-md flex items-center gap-1 transition-all bg-white text-rose-900 shadow-sm";
+        btnPct.className = "px-2.5 py-1 rounded-md flex items-center gap-1 transition-all text-stone-700 hover:text-stone-900";
+        viewInr.classList.remove("hidden");
+        viewPct.classList.add("hidden");
+      }
+      calculateFinalBill();
+    }
+
+    function setQuickPct(val) {
+      const chair = activeChairs[currentChair];
+      chair.discountPct = val;
+      chair.customDiscount = 0;
+      document.getElementById("customPctInput").value = (val > 0 ? val : "");
+      updateQuickPctButtons(val);
+      calculateFinalBill();
+    }
+
+    function setCustomPct(val) {
+      const chair = activeChairs[currentChair];
+      const num = Math.min(100, Math.max(0, Number(val) || 0));
+      chair.discountPct = num;
+      chair.customDiscount = 0;
+      updateQuickPctButtons(num);
+      calculateFinalBill();
+    }
+
+    function updateQuickPctButtons(selectedPct) {
+      document.querySelectorAll(".quick-pct-btn").forEach(btn => {
+        const p = Number(btn.getAttribute("data-pct"));
+        if (p === selectedPct) {
+          btn.className = "quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-700 bg-rose-700 text-white shadow-sm";
+        } else {
+          btn.className = "quick-pct-btn px-2.5 py-1 rounded-lg text-xs font-bold border border-rose-200 bg-white text-stone-700 hover:bg-rose-50";
+        }
+      });
+    }
+
+    function setQuickInr(val) {
+      const chair = activeChairs[currentChair];
+      const cur = Number(document.getElementById("directInrDiscountInput").value) || 0;
+      const total = cur + val;
+      document.getElementById("directInrDiscountInput").value = total;
+      chair.customDiscount = total;
+      calculateFinalBill();
+    }
+
     function openCurrentBillModal() {
       const chair = activeChairs[currentChair];
       if (!chair.items || chair.items.length === 0) {
@@ -532,7 +628,14 @@
       document.getElementById("clientNameInput").value = chair.clientName || "";
       document.getElementById("clientPhoneInput").value = chair.phone || "";
       document.getElementById("clientAddressInput").value = chair.address || "";
-      document.getElementById("discountSelect").value = chair.discountPct || 0;
+      
+      if (chair.customDiscount && chair.customDiscount > 0) {
+        setDiscountMode('inr');
+        document.getElementById("directInrDiscountInput").value = chair.customDiscount;
+      } else {
+        setDiscountMode('pct');
+        setQuickPct(chair.discountPct || 0);
+      }
 
       renderModalItems();
       calculateFinalBill();
@@ -574,28 +677,31 @@
       const mrpTotal = chair.items.reduce((s, it) => s + (it.mrp * it.qty), 0);
       const baseTotal = chair.items.reduce((s, it) => s + (it.price * it.qty), 0);
 
-      const discVal = document.getElementById("discountSelect").value;
-      const customInput = document.getElementById("customDiscountRupees");
-
       let discountRupees = 0;
-      if (discVal === "custom") {
-        customInput.classList.remove("hidden");
-        discountRupees = Math.round(Number(customInput.value) || 0);
+      let discountLabel = "0%";
+
+      if (currentDiscountMode === 'inr') {
+        const inrVal = Math.round(Number(document.getElementById("directInrDiscountInput").value) || 0);
+        discountRupees = Math.min(baseTotal, inrVal);
+        chair.customDiscount = discountRupees;
+        chair.discountPct = 0;
+        discountLabel = `₹${discountRupees}`;
       } else {
-        customInput.classList.add("hidden");
-        const pct = Number(discVal) || 0;
-        chair.discountPct = pct;
+        const pct = Math.min(100, Math.max(0, Number(chair.discountPct) || 0));
         discountRupees = Math.round((baseTotal * pct) / 100);
+        chair.discountPct = pct;
+        chair.customDiscount = 0;
+        discountLabel = `${pct}% OFF`;
       }
 
       const netPayable = Math.max(0, Math.round(baseTotal - discountRupees));
 
       document.getElementById("calcMrpTotal").innerText = `₹${Math.round(mrpTotal)}`;
       document.getElementById("calcBaseTotal").innerText = `₹${Math.round(baseTotal)}`;
-      document.getElementById("calcDiscountAmount").innerText = `-₹${Math.round(discountRupees)}`;
+      document.getElementById("calcDiscountAmount").innerText = `-₹${Math.round(discountRupees)} (${discountLabel})`;
       document.getElementById("calcNetPayable").innerText = `₹${Math.round(netPayable)}`;
 
-      return { mrpTotal, baseTotal, discountRupees, netPayable };
+      return { mrpTotal, baseTotal, discountRupees, netPayable, discountLabel };
     }
 
     function createInvoicePDFDoc() {
@@ -870,7 +976,7 @@
 
       if (phone.length === 10) phone = "91" + phone;
 
-      const shortGreeting = `*EKARA BEAUTY SALON & ACADEMY* 🌸\nDear ${name}, thank you for visiting us today!\n📍 *Salon Map Location:* https://maps.app.goo.gl/UZvL7W19Ex72A3UB6`;
+      const shortGreeting = `*EKARA BEAUTY SALON & ACADEMY* 🌸\nDear ${name}, thank you for visiting us today!\n📍 *Salon Map Location:* https://maps.app.goo.gl/UZvL7W19Ex72A3UB6\n📸 *Instagram:* https://www.instagram.com/ekara_beautysalon/`;
       const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(shortGreeting)}`;
       window.open(waUrl, "_blank");
     }
