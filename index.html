@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ekara Beauty Salon — Mobile POS & Billing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fbf7f4',
+              100: '#f5ece5',
+              500: '#b86b77',
+              700: '#8a3c49',
+              800: '#6c2b36',
+              900: '#461720',
+              gold: '#c59b27'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    @media print {
+      body * { visibility: hidden; }
+      #printableInvoice, #printableInvoice * { visibility: visible; }
+      #printableInvoice { position: absolute; left: 0; top: 0; width: 100%; }
+    }
+  </style>
+
+  <!-- jsPDF & jsPDF-AutoTable for Client-Side Real Vector PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-stone-100 text-stone-900 font-sans pb-28 antialiased selection:bg-rose-100 selection:text-rose-900">
+
+  <!-- TOP HEADER -->
+  <header class="bg-[#641b25] text-white sticky top-0 z-30 shadow-md border-b-2 border-[#1c222d]">
+    <div class="px-4 py-3 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-1.5">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <h1 class="font-serif text-lg font-bold tracking-wider text-rose-100">EK<span class="px-1.5 py-0.5 border border-rose-300 rounded-tl-xl rounded-br-xl text-white mx-0.5">A</span>RA <span class="text-xs font-sans font-semibold text-rose-300">&amp; ACADEMY</span></h1>
+        </div>
+        <p class="text-[10px] text-stone-300">Near Office Chauraha, Awas Vikas, Kanpur - 208021 • 📞 <span class="text-amber-300 font-bold">8840647450</span></p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openRateManager()" class="p-2 rounded-lg bg-stone-800 text-stone-200 hover:text-white border border-stone-700 text-xs font-medium flex items-center gap-1">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+          <span class="hidden sm:inline">Rates</span>
+        </button>
+        <button onclick="openHistoryModal()" class="p-2 rounded-lg bg-stone-800 text-stone-200 hover:text-white border border-stone-700 text-xs font-medium flex items-center gap-1">
+          <svg class="w-4 h-4 text-rose-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="hidden sm:inline">Bills</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CHAIR / TABLE ALLOTMENT BAR (Restaurant Style) -->
+    <div class="bg-[#1c222d] px-3 py-2 border-t border-[#822a36] flex items-center gap-2 overflow-x-auto no-scrollbar">
+      <span class="text-[11px] uppercase tracking-wider text-stone-400 font-semibold shrink-0 pl-1">Chairs:</span>
+      <div id="chairSelector" class="flex items-center gap-2"></div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="max-w-md mx-auto p-3 space-y-3">
+    <!-- ACTIVE CHAIR STATUS CARD -->
+    <div id="activeChairCard" class="bg-white rounded-2xl p-3.5 shadow-sm border border-stone-200"></div>
+
+    <!-- SERVICE CATALOG & SEARCH -->
+    <div class="bg-white rounded-2xl p-3.5 shadow-sm border border-stone-200 space-y-3">
+      <div class="relative">
+        <svg class="w-4 h-4 absolute left-3 top-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        <input type="text" id="searchInput" oninput="renderServices()" placeholder="Search services (e.g. Keratin, Facial, Wax, Cut)..." class="w-full bg-stone-50 border border-stone-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all">
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div id="categoryPills" class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 text-xs"></div>
+
+      <!-- Service Item Cards List -->
+      <div id="servicesList" class="space-y-2 max-h-[52vh] overflow-y-auto pr-1"></div>
+    </div>
+  </main>
+
+  <!-- BOTTOM STICKY BAR: CURRENT CHAIR TOTAL & CHECKOUT -->
+  <div id="bottomBar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-stone-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] z-20">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-3">
+      <div>
+        <div class="text-[11px] text-stone-500 font-medium">Chair <span id="barChairNum">1</span> Total (<span id="barItemCount">0</span> items)</div>
+        <div class="text-xl font-extrabold text-stone-900 tracking-tight" id="barTotalAmount">₹0</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="openCurrentBillModal()" id="btnViewBill" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-800 to-rose-700 hover:from-rose-900 hover:to-rose-800 text-white font-semibold text-sm shadow-md shadow-rose-900/20 active:scale-95 transition-all flex items-center gap-1.5">
+          <span>Checkout & PDF Bill</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CLIENT DETAILS & CHECKOUT / SHARE BILL -->
+  <div id="checkoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      
+      <!-- Modal Header -->
+      <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm tracking-wide text-rose-200">EKARA SALON INVOICE & PDF</h2>
+          <p class="text-[11px] text-stone-400">Ekara Beauty Salon • Chair <span id="modalChairNum">1</span></p>
+        </div>
+        <button onclick="closeCheckoutModal()" class="w-7 h-7 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 hover:text-white">✕</button>
+      </div>
+
+      <div class="p-4 overflow-y-auto space-y-4 flex-1 text-sm">
+        <!-- Client Inputs -->
+        <div class="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-2">
+          <div class="font-semibold text-xs uppercase tracking-wider text-stone-500">Client Details</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] font-bold text-stone-600 block">CLIENT NAME *</label>
+              <input type="text" id="clientNameInput" placeholder="e.g. Priya Sharma" class="w-full mt-0.5 bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-rose-600 focus:outline-none">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-stone-600 block">WHATSAPP NO. *</label>
+              <input type="tel" id="clientPhoneInput" placeholder="10 Digit Number" class="w-full mt-0.5 bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-rose-600 focus:outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] font-bold text-stone-600 block">ADDRESS / AREA (OPTIONAL)</label>
+            <input type="text" id="clientAddressInput" placeholder="e.g. Awas Vikas, Hanspuram, Naubasta" class="w-full mt-0.5 bg-white border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-rose-600 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Selected Items Table -->
+        <div>
+          <div class="font-semibold text-xs uppercase tracking-wider text-stone-500 mb-1.5">Selected Treatments</div>
+          <div id="modalItemsList" class="divide-y divide-stone-100 bg-stone-50 border border-stone-200 rounded-xl overflow-hidden"></div>
+        </div>
+
+        <!-- Discount & Pricing Calculations -->
+        <div class="bg-rose-50/50 p-3 rounded-xl border border-rose-100 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-stone-600">Subtotal (Original MRP):</span>
+            <span class="font-medium text-stone-500 line-through" id="calcMrpTotal">₹0</span>
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-stone-600">Standard Service Price:</span>
+            <span class="font-bold text-stone-800" id="calcBaseTotal">₹0</span>
+          </div>
+
+          <!-- Extra Custom Discount Selector -->
+          <div class="pt-2 border-t border-rose-100 flex items-center justify-between gap-2">
+            <label class="text-xs font-semibold text-rose-900">Special Discount:</label>
+            <div class="flex items-center gap-1.5">
+              <select id="discountSelect" onchange="calculateFinalBill()" class="bg-white border border-rose-200 rounded-lg px-2 py-1 text-xs font-semibold text-stone-800 focus:outline-none">
+                <option value="0">0% None</option>
+                <option value="5">5% OFF</option>
+                <option value="10">10% OFF</option>
+                <option value="15">15% OFF</option>
+                <option value="20">20% OFF</option>
+                <option value="25">25% OFF</option>
+                <option value="custom">Custom (₹)</option>
+              </select>
+              <input type="number" id="customDiscountRupees" oninput="calculateFinalBill()" placeholder="₹ Disc" class="w-16 bg-white border border-rose-200 rounded-lg px-2 py-1 text-xs hidden font-bold text-rose-800">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-rose-700 font-medium">
+            <span>You Saved (Discount):</span>
+            <span id="calcDiscountAmount">-₹0</span>
+          </div>
+
+          <div class="pt-2 border-t border-rose-200 flex items-center justify-between">
+            <span class="text-sm font-extrabold text-stone-900">NET PAYABLE:</span>
+            <span class="text-xl font-extrabold text-rose-900" id="calcNetPayable">₹0</span>
+          </div>
+          <p class="text-[10px] text-stone-400 text-right italic">*Always rounded in clean whole rupees.</p>
+        </div>
+      </div>
+
+      <!-- PDF ACTION BUTTONS (PURE PDF WORKFLOW) -->
+      <div class="p-3 bg-stone-50 border-t border-stone-200 space-y-2">
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Step 1: Open Unsaved Number on WhatsApp first -->
+          <button onclick="openClientWhatsAppChat()" class="w-full py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 active:scale-95 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-sm">
+            <span>1. Open Client Chat</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </button>
+
+          <!-- Step 2: Send Pure PDF File Directly -->
+          <button onclick="sharePurePDFFile()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-md shadow-emerald-700/20">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+            <span>2. Send PDF File</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <!-- View / Download PDF -->
+          <button onclick="viewOrDownloadPDF()" class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            <span>Preview PDF</span>
+          </button>
+
+          <!-- Finish & Free Chair -->
+          <button onclick="finishAndFreeChair()" class="w-full py-2 rounded-xl bg-stone-900 hover:bg-stone-800 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>Done & Free Chair</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RATE MANAGER (EDIT RATES PERMANENTLY) -->
+  <div id="rateManagerModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white w-full max-w-md rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-amber-300">CUSTOM RATE MANAGER</h2>
+          <p class="text-[10px] text-stone-400">Increase, decrease or edit any service price</p>
+        </div>
+        <button onclick="closeRateManager()" class="w-7 h-7 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 hover:text-white">✕</button>
+      </div>
+      
+      <div class="p-3 border-b border-stone-200">
+        <input type="text" id="rateSearchInput" oninput="renderRateManagerList()" placeholder="Filter services to edit..." class="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500">
+      </div>
+
+      <div id="rateManagerList" class="p-3 overflow-y-auto space-y-2 flex-1 text-xs"></div>
+
+      <div class="p-3 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
+        <button onclick="resetDefaultRates()" class="text-rose-700 text-[11px] font-semibold underline">Reset to Default Rates</button>
+        <button onclick="closeRateManager()" class="px-4 py-1.5 bg-stone-900 text-white rounded-lg font-bold text-xs">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PAST BILLS (AUTO PURGED AFTER 30 DAYS) -->
+  <div id="historyModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white w-full max-w-md rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-stone-900 text-white flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-sm text-rose-200">PAST ORDERS (LAST 30 DAYS)</h2>
+          <p class="text-[10px] text-emerald-400">● Auto-cleaned (Older than 30 days deleted)</p>
+        </div>
+        <button onclick="closeHistoryModal()" class="w-7 h-7 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 hover:text-white">✕</button>
+      </div>
+
+      <div id="historyList" class="p-3 overflow-y-auto space-y-2 flex-1 text-xs divide-y divide-stone-100"></div>
+
+      <div class="p-3 bg-stone-50 border-t border-stone-200 text-center">
+        <p class="text-[10px] text-stone-500">Zero phone memory lag. All storage is kept ultra-compact.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // MASTER INITIAL SERVICES DATA
+    const DEFAULT_SERVICES = [{"id":"HC-101","cat":"Hair Care & Styling","sub":"Hair Cut & Blowdry","name":"Classic Female Haircut","brand":"Lakmé Salon / Professional Shears","mrp":230,"price":200},{"id":"HC-102","cat":"Hair Care & Styling","sub":"Hair Cut & Blowdry","name":"Layered / Feather / Butterfly Cut","brand":"Professional Styling Tools","mrp":345,"price":300},{"id":"HC-103","cat":"Hair Care & Styling","sub":"Hair Cut & Blowdry","name":"Split-Ends Trimming & Serum","brand":"Matrix / L'Oréal Liss Unlimited","mrp":115,"price":100},{"id":"HC-104","cat":"Hair Care & Styling","sub":"Hair Cut & Blowdry","name":"Kids Haircut (Under 10 Yrs)","brand":"Baby Gentle Shears & Spray","mrp":115,"price":100},{"id":"HC-105","cat":"Hair Care & Styling","sub":"Wash & Styling","name":"Clarifying Hair Wash & Conditioning","brand":"L'Oréal Professionnel Serie Expert","mrp":172,"price":150},{"id":"HC-106","cat":"Hair Care & Styling","sub":"Wash & Styling","name":"Blow Dry with In-Curls / Out-Curls","brand":"Ikonic Pro Blowdryers","mrp":345,"price":300},{"id":"HC-107","cat":"Hair Care & Styling","sub":"Wash & Styling","name":"Thermal Ironing / Tong Curls","brand":"Babyliss Pro Curling Tongs","mrp":288,"price":250},{"id":"HT-201","cat":"Hair Spa & Therapy","sub":"Deep Nourishment","name":"L'Oréal Classic Hair Spa (Hydrating)","brand":"L'Oréal Paris Hair Spa Creambath","mrp":805,"price":700},{"id":"HT-202","cat":"Hair Spa & Therapy","sub":"Deep Nourishment","name":"L'Oréal Mythic Oil Luxury Hair Spa","brand":"L'Oréal Mythic Oil Nourishing Mask","mrp":920,"price":800},{"id":"HT-203","cat":"Hair Spa & Therapy","sub":"Specialized Spa","name":"Anti-Dandruff Scalp Detox Treatment","brand":"Biolage ScalpSync / Kérastase","mrp":1380,"price":1200},{"id":"HT-204","cat":"Hair Spa & Therapy","sub":"Specialized Spa","name":"Schwarzkopf Professional Repair Spa","brand":"Schwarzkopf Bonacure Argan Therapy","mrp":1725,"price":1500},{"id":"HC-301","cat":"Hair Chemical Treatments","sub":"Smoothing / Straightening","name":"Keratin Treatment (Medium Length)","brand":"Amazon Series / GK Hair Keratin","mrp":4599,"price":3999},{"id":"HC-302","cat":"Hair Chemical Treatments","sub":"Smoothing / Straightening","name":"Hair Botoplex / Botox Treatment","brand":"Inoar / Cadiveu Hair Botox","mrp":4600,"price":4000},{"id":"HC-303","cat":"Hair Chemical Treatments","sub":"Smoothing / Straightening","name":"Permanent Smoothening (Shoulder Length)","brand":"L'Oréal X-Tenso Moisturist","mrp":3450,"price":3000},{"id":"HC-304","cat":"Hair Chemical Treatments","sub":"Smoothing / Straightening","name":"Permanent Rebonding (Full Length)","brand":"Schwarzkopf Glatt / L'Oréal","mrp":4600,"price":4000},{"id":"HC-305","cat":"Hair Chemical Treatments","sub":"Advanced Straightening","name":"Nanoplastia Organic Straightening","brand":"Floractive W-One Nanoplastia","mrp":5750,"price":5000},{"id":"HC-401","cat":"Hair Coloring & Highlights","sub":"Root Touch-up","name":"Root Touch-Up (Ammonia-Free)","brand":"L'Oréal INOA / Matrix Socolor","mrp":690,"price":600},{"id":"HC-402","cat":"Hair Coloring & Highlights","sub":"Global Color","name":"Global Hair Color (Shoulder Length)","brand":"L'Oréal Majirel / INOA","mrp":2530,"price":2200},{"id":"HC-403","cat":"Hair Coloring & Highlights","sub":"Global Color","name":"Global Hair Color (Waist Length)","brand":"L'Oréal Majirel / INOA","mrp":3220,"price":2800},{"id":"HC-404","cat":"Hair Coloring & Highlights","sub":"Highlights / Balayage","name":"Balayage / Ombre / Foil Highlights","brand":"Schwarzkopf Blondme & Glossing","mrp":4025,"price":3500},{"id":"HC-405","cat":"Hair Coloring & Highlights","sub":"Highlights / Balayage","name":"Per Streak Highlights (Fashion Color)","brand":"Crazy Color / Manic Panic","mrp":230,"price":200},{"id":"SC-501","cat":"Facial & Skin Care","sub":"Cleanups","name":"Express Fruit Cleanup (Fresh Glow)","brand":"Biotique / Nature's Essence","mrp":288,"price":250},{"id":"SC-502","cat":"Facial & Skin Care","sub":"Cleanups","name":"Sara Anti-Tan Clarifying Cleanup","brand":"Sara Herbals (O3+ Sister Brand)","mrp":402,"price":350},{"id":"SC-503","cat":"Facial & Skin Care","sub":"Cleanups","name":"Acne & Sebum Control Deep Cleanup","brand":"Cheryl's Cosmeceuticals Clarifiac","mrp":518,"price":450},{"id":"SC-504","cat":"Facial & Skin Care","sub":"Cleanups","name":"Insta-Glow Diamond Cleanup","brand":"VLCC Diamond Herbal","mrp":575,"price":500},{"id":"SC-505","cat":"Facial & Skin Care","sub":"Cleanups","name":"Ozone D-Tan Deep Clarifying Cleanup","brand":"Ozone Herbals Professional","mrp":460,"price":400},{"id":"FC-601","cat":"Facial & Skin Care","sub":"Salon Facials","name":"Lotus Herbals Radiant Gold Glow Facial","brand":"Lotus Professional 24K Gold","mrp":1265,"price":1100},{"id":"FC-602","cat":"Facial & Skin Care","sub":"Salon Facials","name":"O3+ Seaweed Soothing Facial (Oily Skin)","brand":"O3+ Professional Seaweed Range","mrp":1725,"price":1500},{"id":"FC-603","cat":"Facial & Skin Care","sub":"Salon Facials","name":"O3+ Whitening & Bridal Glow Facial","brand":"O3+ Brightening Whitening Luxury","mrp":2070,"price":1800},{"id":"FC-604","cat":"Facial & Skin Care","sub":"Salon Facials","name":"Cheryl's OxyBlast Radiance Facial","brand":"Cheryl's Cosmeceuticals","mrp":1380,"price":1200},{"id":"FC-605","cat":"Facial & Skin Care","sub":"Salon Facials","name":"Jovees Anti-Pigmentation Radiance Facial","brand":"Jovees Professional Herbal Kit","mrp":1495,"price":1300},{"id":"FC-606","cat":"Facial & Skin Care","sub":"Salon Facials","name":"Organic Harvest Pearl Glow Facial","brand":"Organic Harvest Certified Range","mrp":1035,"price":900},{"id":"FC-607","cat":"Facial & Skin Care","sub":"Salon Facials","name":"Organic Harvest Bridal Radiance Facial","brand":"Organic Harvest Luxury Bridal Kit","mrp":1380,"price":1200},{"id":"FC-608","cat":"Facial & Skin Care","sub":"Advanced Medi Facials","name":"HydraFacial 7-Step Machine Medi-Facial","brand":"Clinical Hydra-Vacuum Infusion","mrp":3105,"price":2700},{"id":"FC-609","cat":"Facial & Skin Care","sub":"Advanced Medi Facials","name":"Korean Glass Skin Hydrating Facial","brand":"Hyaluronic Acid + Peel-Off Essence","mrp":2415,"price":2100},{"id":"FC-610","cat":"Facial & Skin Care","sub":"Advanced Medi Facials","name":"Organic Harvest Vitamin C Radiance Facial","brand":"Organic Harvest Active Vit-C Infusion","mrp":2875,"price":2500},{"id":"FC-611","cat":"Facial & Skin Care","sub":"Advanced Medi Facials","name":"Lotus Herbal Algae Peel-Off Mask Facial","brand":"Lotus Professional Phyto-Rx Range","mrp":690,"price":600},{"id":"FC-612","cat":"Facial & Skin Care","sub":"Advanced Medi Facials","name":"Lotus Luxury Algae Peel Mask Facial","brand":"Lotus Professional Phyto-Rx Range","mrp":1380,"price":1200},{"id":"BD-701","cat":"Bleach & De-Tan","sub":"Face & Neck","name":"Nature's Essence Face & Neck Bleach","brand":"Nature's Essence Crème Bleach","mrp":172,"price":150},{"id":"BD-702","cat":"Bleach & De-Tan","sub":"Face & Neck","name":"Oxy Life Face & Neck Bleach","brand":"Oxy Life Crème Bleach","mrp":230,"price":200},{"id":"BD-703","cat":"Bleach & De-Tan","sub":"Face & Neck","name":"Raaga Professional De-Tan Pack","brand":"Raaga Stem Cell D-Tan","mrp":230,"price":200},{"id":"BD-704","cat":"Bleach & De-Tan","sub":"Face & Neck","name":"Sara O3+ Herbal D-Tan with Serum","brand":"Sara Herbals Oxy D-Tan","mrp":402,"price":350},{"id":"BD-705","cat":"Bleach & De-Tan","sub":"Body Areas","name":"Underarms D-Tan / Lightening Pack","brand":"Raaga D-Tan Cream","mrp":230,"price":200},{"id":"BD-706","cat":"Bleach & De-Tan","sub":"Body Areas","name":"Full Arms & Hands D-Tan","brand":"Sara D-Tan Professional","mrp":460,"price":400},{"id":"BD-707","cat":"Bleach & De-Tan","sub":"Body Areas","name":"Full Legs D-Tan","brand":"Sara D-Tan Professional","mrp":920,"price":800},{"id":"BD-708","cat":"Bleach & De-Tan","sub":"Body Areas","name":"Full Body Polishing & D-Tan Therapy","brand":"Raaga Professional Body Polish","mrp":2875,"price":2500},{"id":"TW-801","cat":"Threading & Hair Removal","sub":"Threading","name":"Eyebrow Shaping & Threading","brand":"Organica Antibacterial Cotton Thread","mrp":34,"price":30},{"id":"TW-802","cat":"Threading & Hair Removal","sub":"Threading","name":"Upper Lip / Chin Threading","brand":"Organic Cotton Thread","mrp":23,"price":20},{"id":"TW-803","cat":"Threading & Hair Removal","sub":"Threading","name":"Full Face Threading (Forehead, Lip, Brow)","brand":"Organic Cotton Thread","mrp":57,"price":50},{"id":"TW-804","cat":"Threading & Hair Removal","sub":"Waxing - Normal","name":"Full Arms Honey/Chocolate Waxing","brand":"Rica / Sleek Chocolate Wax","mrp":288,"price":250},{"id":"TW-805","cat":"Threading & Hair Removal","sub":"Waxing - Normal","name":"Full Legs Honey/Chocolate Waxing","brand":"Rica / Sleek Chocolate Wax","mrp":460,"price":400},{"id":"TW-806","cat":"Threading & Hair Removal","sub":"Waxing - Normal","name":"Underarms Waxing (Normal)","brand":"Chocolate Waxing Pack","mrp":92,"price":80},{"id":"TW-807","cat":"Threading & Hair Removal","sub":"Waxing - Rica Luxury","name":"Rica Liposoluble Full Arms + Underarms","brand":"Rica Italy White Chocolate Wax","mrp":518,"price":450},{"id":"TW-808","cat":"Threading & Hair Removal","sub":"Waxing - Rica Luxury","name":"Rica Liposoluble Full Legs Waxing","brand":"Rica Italy Titanium Wax","mrp":805,"price":700},{"id":"TW-809","cat":"Threading & Hair Removal","sub":"Waxing - Rica Luxury","name":"Rica Bikini / Brazilian Wax","brand":"Rica Brazilian Avocado Wax","mrp":1380,"price":1200},{"id":"TW-810","cat":"Threading & Hair Removal","sub":"Waxing - Rica Luxury","name":"Full Body Rica Waxing Package","brand":"Rica Italian Liposoluble Wax","mrp":2875,"price":2500},{"id":"MP-901","cat":"Hands & Feet Care","sub":"Classic Care","name":"Classic Manicure with Cuticle Clean","brand":"Vaadi Herbals / VLCC Mani Kit","mrp":460,"price":400},{"id":"MP-902","cat":"Hands & Feet Care","sub":"Classic Care","name":"Classic Pedicure with Heel Scrub","brand":"Vaadi Herbals Peppermint Foot Kit","mrp":460,"price":400},{"id":"MP-903","cat":"Hands & Feet Care","sub":"Spa Luxury","name":"Sara Herbals Deluxe Spa Manicure","brand":"Sara Herbals Luxury Mani Kit","mrp":460,"price":400},{"id":"MP-904","cat":"Hands & Feet Care","sub":"Spa Luxury","name":"VLCC Deluxe Spa Pedicure","brand":"VLCC Luxury Pedi Kit","mrp":690,"price":600},{"id":"MP-905","cat":"Hands & Feet Care","sub":"Spa Luxury","name":"VLCC Herbals Deluxe Spa Manicure","brand":"VLCC Professional Mani Kit","mrp":518,"price":450},{"id":"MP-906","cat":"Hands & Feet Care","sub":"Premium Therapy","name":"Bubble Fizz / Ice Cream Pedicure","brand":"Bomb Cosmetics Foot Soaks","mrp":920,"price":800},{"id":"MP-907","cat":"Hands & Feet Care","sub":"Premium Therapy","name":"Paraffin Wax Hand & Foot Softening Spa","brand":"Warm Aromatherapy Paraffin Bath","mrp":1380,"price":1200},{"id":"NL-1001","cat":"Nail Art & Extensions","sub":"Nail Enhancement","name":"Gel Nail Polish Application (Hands)","brand":"Bluesky / Rosalind Gel Polish","mrp":574,"price":499},{"id":"NL-1002","cat":"Nail Art & Extensions","sub":"Nail Enhancement","name":"Acrylic Nail Extensions (Set of 10)","brand":"MIA Secret / Cuccio Pro System","mrp":2069,"price":1799},{"id":"NL-1003","cat":"Nail Art & Extensions","sub":"Nail Enhancement","name":"Gel Nail Extensions (Set of 10)","brand":"IBD / Bluesky Hard Builder Gel","mrp":2299,"price":1999},{"id":"NL-1004","cat":"Nail Art & Extensions","sub":"Nail Enhancement","name":"Bridal Chrome / Ombre / Glitter Nail Art","brand":"Swarovski Crystals & Chrome Powder","mrp":976,"price":849},{"id":"MU-1101","cat":"Bridal & Occasion Makeup","sub":"Party Makeup","name":"Day Party / Light Glow Makeup (Kryolan Base)","brand":"Kryolan Dermacolor / PAC","mrp":1380,"price":1200},{"id":"MU-1102","cat":"Bridal & Occasion Makeup","sub":"Party Makeup","name":"Day Party / Light Glow Makeup (PAC/Forever52)","brand":"PAC / Forever52 Cosmetics","mrp":1839,"price":1599},{"id":"MU-1103","cat":"Bridal & Occasion Makeup","sub":"Party Makeup","name":"Evening Heavy HD Party Makeup","brand":"MAC / Huda Beauty / Kryolan","mrp":2530,"price":2200},{"id":"MU-1104","cat":"Bridal & Occasion Makeup","sub":"Engagement / Roka","name":"Engagement / Sagan High-Definition Makeup","brand":"MAC Studio Fix & Huda Palette","mrp":4025,"price":3500},{"id":"MU-1105","cat":"Bridal & Occasion Makeup","sub":"Bridal Luxury","name":"Lakmé-Standard HD Bridal Makeup","brand":"MAC / Kryolan HD / Charlotte Tilbury","mrp":9200,"price":8000},{"id":"MU-1106","cat":"Bridal & Occasion Makeup","sub":"Bridal Luxury","name":"Royal HD Bridal Makeup","brand":"MAC Absolute / Estée Lauder Pro","mrp":13800,"price":12000},{"id":"MU-1107","cat":"Bridal & Occasion Makeup","sub":"Bridal Luxury","name":"Ultra HD Airbrush Bridal Makeup","brand":"TEMPTU Pro Silicon Airbrush System","mrp":17250,"price":15000},{"id":"MU-1108","cat":"Bridal & Occasion Makeup","sub":"Bridal Luxury","name":"Reception / Cocktail Glamour Bridal Makeup","brand":"Huda Beauty / Fenty / Kryolan Pro","mrp":17250,"price":15000},{"id":"MU-1109","cat":"Bridal & Occasion Makeup","sub":"Bridal Luxury","name":"NARS / Huda Beauty Signature Bridal Luxury","brand":"NARS Radiant Longwear & Huda Faux Filter","mrp":20700,"price":18000},{"id":"MU-1110","cat":"Bridal & Occasion Makeup","sub":"Add-on Services","name":"Designer Saree / Lehenga Draping","brand":"Ironing & Pleating Professional Support","mrp":345,"price":300},{"id":"MU-1111","cat":"Bridal & Occasion Makeup","sub":"Add-on Services","name":"Bridal Hair Updo with Real Flowers / Accessories","brand":"Gotta, Brooch & Floral Bun Support","mrp":575,"price":500}];
+
+    let services = [];
+    let currentChair = 1;
+    let selectedCategory = "ALL";
+    let activeChairs = {
+      1: { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 },
+      2: { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 },
+      3: { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 },
+      4: { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 }
+    };
+
+    function initApp() {
+      const savedRates = localStorage.getItem("ekara_custom_services");
+      if (savedRates) {
+        try { services = JSON.parse(savedRates); } catch(e) { services = [...DEFAULT_SERVICES]; }
+      } else {
+        services = [...DEFAULT_SERVICES];
+      }
+
+      const savedChairs = localStorage.getItem("ekara_active_chairs");
+      if (savedChairs) {
+        try { activeChairs = JSON.parse(savedChairs); } catch(e) {}
+      }
+
+      purgeOldHistory();
+      renderChairSelector();
+      renderActiveChairCard();
+      renderCategoryPills();
+      renderServices();
+      updateBottomBar();
+    }
+
+    function purgeOldHistory() {
+      try {
+        let history = JSON.parse(localStorage.getItem("ekara_billing_history") || "[]");
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        const filtered = history.filter(item => item.timestamp >= thirtyDaysAgo);
+        localStorage.setItem("ekara_billing_history", JSON.stringify(filtered));
+      } catch(e) {}
+    }
+
+    function saveActiveChairs() {
+      localStorage.setItem("ekara_active_chairs", JSON.stringify(activeChairs));
+    }
+
+    function renderChairSelector() {
+      const container = document.getElementById("chairSelector");
+      container.innerHTML = "";
+      for (let i = 1; i <= 4; i++) {
+        const chair = activeChairs[i];
+        const isOccupied = chair && chair.items && chair.items.length > 0;
+        const isCurrent = (currentChair === i);
+
+        const btn = document.createElement("button");
+        btn.onclick = () => switchChair(i);
+        btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+          isCurrent 
+            ? "bg-rose-700 text-white shadow-md ring-2 ring-rose-400" 
+            : isOccupied 
+              ? "bg-amber-900/40 text-amber-300 border border-amber-600/50" 
+              : "bg-stone-900 text-stone-400 border border-stone-800 hover:text-white"
+        }`;
+
+        btn.innerHTML = `
+          <span class="w-2 h-2 rounded-full ${isOccupied ? 'bg-amber-400' : 'bg-emerald-400'}"></span>
+          <span>Chair ${i}</span>
+          ${isOccupied ? `<span class="text-[10px] bg-amber-500/20 text-amber-200 px-1 rounded">${chair.items.length}</span>` : ''}
+        `;
+        container.appendChild(btn);
+      }
+    }
+
+    function switchChair(chairNum) {
+      currentChair = chairNum;
+      renderChairSelector();
+      renderActiveChairCard();
+      renderServices();
+      updateBottomBar();
+    }
+
+    function renderActiveChairCard() {
+      const card = document.getElementById("activeChairCard");
+      const chair = activeChairs[currentChair];
+      const count = chair.items ? chair.items.length : 0;
+      const isOccupied = count > 0;
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between border-b border-stone-100 pb-2 mb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-stone-900 text-white font-extrabold text-xs flex items-center justify-center">C${currentChair}</span>
+            <div>
+              <div class="text-xs font-bold text-stone-900">Chair ${currentChair} • ${isOccupied ? '<span class="text-amber-700 font-semibold">Active Session</span>' : '<span class="text-emerald-700 font-semibold">Ready / Free</span>'}</div>
+              <div class="text-[11px] text-stone-500">${chair.clientName ? chair.clientName : 'Walk-in Client'} ${chair.phone ? '• ' + chair.phone : ''}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="openCurrentBillModal()" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 font-bold text-xs border border-rose-200 flex items-center gap-1">
+              <span>${count} Items</span>
+            </button>
+            ${isOccupied ? `
+              <button onclick="clearCurrentChair()" title="Reset Chair" class="p-1 rounded-lg text-stone-400 hover:text-rose-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+        ${!chair.clientName ? `
+          <div class="flex items-center gap-2 text-xs">
+            <input type="text" id="quickNameInput" placeholder="Quick Client Name..." value="${chair.clientName || ''}" onchange="updateQuickClient()" class="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1 text-xs">
+            <input type="tel" id="quickPhoneInput" placeholder="WhatsApp No..." value="${chair.phone || ''}" onchange="updateQuickClient()" class="w-28 bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-1 text-xs">
+          </div>
+        ` : ''}
+      `;
+    }
+
+    function updateQuickClient() {
+      const nameEl = document.getElementById("quickNameInput");
+      const phoneEl = document.getElementById("quickPhoneInput");
+      if (nameEl) activeChairs[currentChair].clientName = nameEl.value.trim();
+      if (phoneEl) activeChairs[currentChair].phone = phoneEl.value.trim();
+      saveActiveChairs();
+      renderActiveChairCard();
+    }
+
+    function clearCurrentChair() {
+      if (confirm(`Do you want to reset & clear Chair ${currentChair}?`)) {
+        activeChairs[currentChair] = { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 };
+        saveActiveChairs();
+        renderChairSelector();
+        renderActiveChairCard();
+        renderServices();
+        updateBottomBar();
+      }
+    }
+
+    function renderCategoryPills() {
+      const container = document.getElementById("categoryPills");
+      const cats = ["ALL", "Hair Care", "Hair Spa", "Chemical", "Color", "Cleanups", "Facials", "Bleach & De-Tan", "Waxing", "Mani-Pedi", "Nail Art", "Bridal"];
+      
+      container.innerHTML = cats.map(cat => `
+        <button onclick="setCategory('${cat}')" class="px-3 py-1 rounded-full whitespace-nowrap font-medium transition-all ${
+          selectedCategory === cat 
+            ? "bg-stone-900 text-white shadow-sm" 
+            : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+        }">
+          ${cat}
+        </button>
+      `).join("");
+    }
+
+    function setCategory(cat) {
+      selectedCategory = cat;
+      renderCategoryPills();
+      renderServices();
+    }
+
+    function renderServices() {
+      const container = document.getElementById("servicesList");
+      const query = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+      const currentItems = activeChairs[currentChair].items || [];
+
+      const filtered = services.filter(s => {
+        const matchesQuery = s.name.toLowerCase().includes(query) || s.sub.toLowerCase().includes(query) || s.brand.toLowerCase().includes(query);
+        if (!matchesQuery) return false;
+        if (selectedCategory === "ALL") return true;
+        if (selectedCategory === "Hair Care") return s.cat.includes("Hair Care");
+        if (selectedCategory === "Hair Spa") return s.cat.includes("Hair Spa");
+        if (selectedCategory === "Chemical") return s.cat.includes("Chemical");
+        if (selectedCategory === "Color") return s.cat.includes("Color");
+        if (selectedCategory === "Cleanups") return s.sub.includes("Cleanup") || s.name.includes("Cleanup");
+        if (selectedCategory === "Facials") return s.sub.includes("Facial");
+        if (selectedCategory === "Bleach & De-Tan") return s.cat.includes("Bleach");
+        if (selectedCategory === "Waxing") return s.cat.includes("Threading") || s.cat.includes("Waxing");
+        if (selectedCategory === "Mani-Pedi") return s.cat.includes("Hands & Feet");
+        if (selectedCategory === "Nail Art") return s.cat.includes("Nail");
+        if (selectedCategory === "Bridal") return s.cat.includes("Bridal");
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="py-8 text-center text-xs text-stone-400">No services found matching your search.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(s => {
+        const inCartItem = currentItems.find(it => it.id === s.id);
+        const qty = inCartItem ? inCartItem.qty : 0;
+
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl border ${qty > 0 ? 'bg-rose-50/40 border-rose-300' : 'bg-white border-stone-200'} hover:border-stone-300 transition-all">
+            <div class="flex-1 pr-2">
+              <div class="text-[10px] font-semibold tracking-wider uppercase text-rose-800">${s.sub}</div>
+              <div class="text-xs font-bold text-stone-900 leading-tight">${s.name}</div>
+              <div class="text-[10px] text-stone-500">${s.brand}</div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <span class="text-[11px] text-stone-400 line-through">₹${Math.round(s.mrp)}</span>
+                <span class="text-xs font-extrabold text-stone-900">₹${Math.round(s.price)}</span>
+                <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">${Math.round(((s.mrp - s.price)/s.mrp)*100)}% OFF</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1 shrink-0">
+              ${qty > 0 ? `
+                <button onclick="updateItemQty('${s.id}', -1)" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold flex items-center justify-center text-sm active:scale-95">−</button>
+                <span class="w-6 text-center font-bold text-xs text-rose-900">${qty}</span>
+                <button onclick="updateItemQty('${s.id}', 1)" class="w-7 h-7 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold flex items-center justify-center text-sm active:scale-95">+</button>
+              ` : `
+                <button onclick="updateItemQty('${s.id}', 1)" class="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-rose-800 active:scale-95 text-white font-semibold text-xs flex items-center gap-1 transition-all">
+                  <span>+ Add</span>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function updateItemQty(serviceId, delta) {
+      const chair = activeChairs[currentChair];
+      let item = chair.items.find(it => it.id === serviceId);
+
+      if (!item && delta > 0) {
+        const s = services.find(x => x.id === serviceId);
+        if (s) {
+          chair.items.push({ id: s.id, name: s.name, mrp: Math.round(s.mrp), price: Math.round(s.price), qty: 1 });
+        }
+      } else if (item) {
+        item.qty += delta;
+        if (item.qty <= 0) {
+          chair.items = chair.items.filter(it => it.id !== serviceId);
+        }
+      }
+
+      saveActiveChairs();
+      renderChairSelector();
+      renderActiveChairCard();
+      renderServices();
+      updateBottomBar();
+    }
+
+    function updateBottomBar() {
+      const chair = activeChairs[currentChair];
+      const count = chair.items.reduce((sum, it) => sum + it.qty, 0);
+      const total = chair.items.reduce((sum, it) => sum + (it.price * it.qty), 0);
+
+      document.getElementById("barChairNum").innerText = currentChair;
+      document.getElementById("barItemCount").innerText = count;
+      document.getElementById("barTotalAmount").innerText = `₹${Math.round(total)}`;
+    }
+
+    function openCurrentBillModal() {
+      const chair = activeChairs[currentChair];
+      if (!chair.items || chair.items.length === 0) {
+        alert("Chair " + currentChair + " has no services selected yet!");
+        return;
+      }
+
+      document.getElementById("modalChairNum").innerText = currentChair;
+      document.getElementById("clientNameInput").value = chair.clientName || "";
+      document.getElementById("clientPhoneInput").value = chair.phone || "";
+      document.getElementById("clientAddressInput").value = chair.address || "";
+      document.getElementById("discountSelect").value = chair.discountPct || 0;
+
+      renderModalItems();
+      calculateFinalBill();
+
+      document.getElementById("checkoutModal").classList.remove("hidden");
+    }
+
+    function closeCheckoutModal() {
+      const chair = activeChairs[currentChair];
+      chair.clientName = document.getElementById("clientNameInput").value.trim();
+      chair.phone = document.getElementById("clientPhoneInput").value.trim();
+      chair.address = document.getElementById("clientAddressInput").value.trim();
+      saveActiveChairs();
+      renderActiveChairCard();
+
+      document.getElementById("checkoutModal").classList.add("hidden");
+    }
+
+    function renderModalItems() {
+      const container = document.getElementById("modalItemsList");
+      const chair = activeChairs[currentChair];
+
+      container.innerHTML = chair.items.map(it => `
+        <div class="flex items-center justify-between p-2 text-xs">
+          <div class="flex-1 pr-2">
+            <div class="font-bold text-stone-800">${it.name}</div>
+            <div class="text-[10px] text-stone-500">₹${Math.round(it.price)} × ${it.qty}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-stone-900">₹${Math.round(it.price * it.qty)}</span>
+            <button onclick="updateItemQty('${it.id}', -${it.qty}); renderModalItems(); calculateFinalBill();" class="text-stone-400 hover:text-rose-600 text-xs">✕</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function calculateFinalBill() {
+      const chair = activeChairs[currentChair];
+      const mrpTotal = chair.items.reduce((s, it) => s + (it.mrp * it.qty), 0);
+      const baseTotal = chair.items.reduce((s, it) => s + (it.price * it.qty), 0);
+
+      const discVal = document.getElementById("discountSelect").value;
+      const customInput = document.getElementById("customDiscountRupees");
+
+      let discountRupees = 0;
+      if (discVal === "custom") {
+        customInput.classList.remove("hidden");
+        discountRupees = Math.round(Number(customInput.value) || 0);
+      } else {
+        customInput.classList.add("hidden");
+        const pct = Number(discVal) || 0;
+        chair.discountPct = pct;
+        discountRupees = Math.round((baseTotal * pct) / 100);
+      }
+
+      const netPayable = Math.max(0, Math.round(baseTotal - discountRupees));
+
+      document.getElementById("calcMrpTotal").innerText = `₹${Math.round(mrpTotal)}`;
+      document.getElementById("calcBaseTotal").innerText = `₹${Math.round(baseTotal)}`;
+      document.getElementById("calcDiscountAmount").innerText = `-₹${Math.round(discountRupees)}`;
+      document.getElementById("calcNetPayable").innerText = `₹${Math.round(netPayable)}`;
+
+      return { mrpTotal, baseTotal, discountRupees, netPayable };
+    }
+
+    function createInvoicePDFDoc() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const chair = activeChairs[currentChair];
+      const name = document.getElementById("clientNameInput").value.trim() || "Valued Client";
+      const phone = document.getElementById("clientPhoneInput").value.trim() || "N/A";
+      const address = document.getElementById("clientAddressInput").value.trim() || "Kanpur Nagar";
+      const calc = calculateFinalBill();
+
+      const invoiceNo = "EKA-" + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + "-" + Math.floor(1000 + Math.random() * 9000);
+      const dateStr = new Date().toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' });
+      const timeStr = new Date().toLocaleTimeString("en-IN", { hour: '2-digit', minute: '2-digit' });
+
+      // TOP BANNER REPLICA
+      doc.setFillColor(114, 32, 42);
+      doc.rect(10, 10, 190, 32, "F");
+
+      doc.setTextColor(243, 232, 234);
+      doc.setFont("times", "normal");
+      doc.setFontSize(24);
+      doc.text("EK", 16, 22);
+
+      doc.setDrawColor(226, 203, 208);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(31.5, 13.5, 11, 11, 3, 3, "D");
+      doc.setFont("times", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.text("A", 37, 21.5, { align: "center" });
+
+      doc.setFont("times", "normal");
+      doc.setFontSize(24);
+      doc.setTextColor(243, 232, 234);
+      doc.text("RA", 44.5, 22);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6);
+      doc.setTextColor(223, 195, 199);
+      doc.text("BEAUTY SALON", 16, 25.5);
+      doc.text("& ACADEMY", 45, 25.5);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text("BEAUTY SALON & ACADEMY", 16, 31.5);
+
+      doc.setFontSize(8);
+      doc.setTextColor(247, 214, 219);
+      doc.text("HAIR   |   SKIN   |   MAKEUP", 16, 36);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(243, 232, 234);
+      doc.textWithLink("Instagram: @ekara_beautysalon", 16, 40.5, { url: "https://www.instagram.com/ekara_beautysalon/" });
+
+      doc.setFillColor(67, 15, 22);
+      doc.roundedRect(125, 13, 70, 14, 2, 2, "F");
+      doc.setDrawColor(212, 175, 55);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(125, 13, 70, 14, 2, 2, "D");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(252, 232, 197);
+      doc.text("LAKME CERTIFIED SALON", 160, 18, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(243, 232, 234);
+      doc.text("Govind Nagar Trained • Owner: Sarika Patel", 160, 22, { align: "center" });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text("NEAR OFFICE CHAURAHA, AWAS VIKAS", 195, 31.5, { align: "right" });
+      doc.text("KANPUR NAGAR, PIN CODE - 208021", 195, 35.5, { align: "right" });
+
+      doc.setFillColor(28, 34, 45);
+      doc.rect(10, 42, 190, 9, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      doc.text("Mob: 8840 647 450", 16, 48);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(147, 197, 253);
+      doc.textWithLink("📍 Click Here for Google Map Location", 195, 48, { align: "right", url: "https://maps.app.goo.gl/UZvL7W19Ex72A3UB6" });
+
+      // Client & Invoice Meta Info
+      doc.setDrawColor(230, 216, 212);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(10, 55, 92, 28, 2, 2, "FD");
+      doc.roundedRect(108, 55, 92, 28, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(114, 32, 42);
+      doc.text("CLIENT DETAILS", 15, 61);
+      doc.setDrawColor(240, 230, 225);
+      doc.line(15, 62.5, 96, 62.5);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(43, 37, 35);
+      doc.text(name, 15, 68.5);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 90, 85);
+      doc.text("WhatsApp No: " + phone, 15, 74);
+      doc.text("Area / Address: " + address, 15, 79);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(114, 32, 42);
+      doc.text("INVOICE & CHAIR INFO", 113, 61);
+      doc.line(113, 62.5, 194, 62.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 90, 85);
+      doc.text("Invoice No:", 113, 68.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(43, 37, 35);
+      doc.text(invoiceNo, 145, 68.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 90, 85);
+      doc.text("Date & Time:", 113, 74);
+      doc.setTextColor(43, 37, 35);
+      doc.text(dateStr + " " + timeStr, 145, 74);
+
+      doc.setTextColor(100, 90, 85);
+      doc.text("Station Allotted:", 113, 79);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(114, 32, 42);
+      doc.text("Chair " + currentChair, 145, 79);
+
+      // Treatments Table
+      const tableRows = chair.items.map((it, idx) => [
+        idx + 1,
+        it.name,
+        it.brand || "Professional Kit",
+        it.qty,
+        "Rs. " + Math.round(it.mrp),
+        "Rs. " + Math.round(it.price),
+        "Rs. " + Math.round(it.price * it.qty)
+      ]);
+
+      doc.autoTable({
+        startY: 87,
+        head: [['#', 'Beauty Treatment / Service', 'Brand / Kit', 'Qty', 'MRP', 'Rate', 'Amount']],
+        body: tableRows,
+        theme: 'striped',
+        margin: { left: 10, right: 10 },
+        headStyles: {
+          fillColor: [114, 32, 42],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 8.5,
+          halign: 'left'
+        },
+        styles: {
+          fontSize: 8.5,
+          cellPadding: 2.8,
+          textColor: [43, 37, 35],
+          lineColor: [240, 233, 228],
+          lineWidth: 0.2
+        },
+        alternateRowStyles: {
+          fillColor: [251, 247, 245]
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 8 },
+          1: { fontStyle: 'bold', cellWidth: 70 },
+          2: { cellWidth: 42, fontSize: 7.5, textColor: [120, 110, 105] },
+          3: { halign: 'center', cellWidth: 10 },
+          4: { halign: 'right', cellWidth: 18, textColor: [150, 140, 135] },
+          5: { halign: 'right', cellWidth: 18 },
+          6: { halign: 'right', cellWidth: 24, fontStyle: 'bold' }
+        }
+      });
+
+      // Totals & Savings Section
+      const finalY = doc.lastAutoTable.finalY + 6;
+
+      doc.setDrawColor(230, 216, 212);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(10, finalY, 105, 38, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(114, 32, 42);
+      doc.text("EKARA SALON & ACADEMY PROMISE", 15, finalY + 7);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(90, 80, 75);
+      doc.text("• 100% Genuine sealed professional products used.", 15, finalY + 13);
+      doc.text("• Follow us on Instagram: @ekara_beautysalon", 15, finalY + 18);
+      doc.text("• Address: Near Office Chauraha, Awas Vikas, Kanpur - 208021", 15, finalY + 23);
+
+      doc.setFillColor(249, 236, 239);
+      doc.roundedRect(15, finalY + 27, 95, 8, 2, 2, "F");
+      doc.setTextColor(114, 32, 42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      const totalSavings = (calc.mrpTotal - calc.baseTotal) + calc.discountRupees;
+      doc.text("Total Customer Savings on this Visit: Rs. " + Math.round(totalSavings) + " OFF!", 62.5, finalY + 32.5, { align: "center" });
+
+      doc.setDrawColor(230, 216, 212);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(120, finalY, 80, 38, 2, 2, "FD");
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 90, 85);
+      doc.text("Original MRP Total:", 125, finalY + 7);
+      doc.text("Rs. " + Math.round(calc.mrpTotal), 195, finalY + 7, { align: "right" });
+
+      doc.text("Standard Service Price:", 125, finalY + 13);
+      doc.text("Rs. " + Math.round(calc.baseTotal), 195, finalY + 13, { align: "right" });
+
+      if (calc.discountRupees > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(114, 32, 42);
+        doc.text("Special Discount Applied:", 125, finalY + 19);
+        doc.text("- Rs. " + Math.round(calc.discountRupees), 195, finalY + 19, { align: "right" });
+      }
+
+      doc.setDrawColor(114, 32, 42);
+      doc.setLineWidth(0.5);
+      doc.line(125, finalY + 24, 195, finalY + 24);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(114, 32, 42);
+      doc.text("NET PAYABLE:", 125, finalY + 31);
+      doc.setFontSize(13);
+      doc.setTextColor(28, 34, 45);
+      doc.text("Rs. " + Math.round(calc.netPayable), 195, finalY + 31, { align: "right" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(140, 130, 125);
+      doc.text("*Strict whole rupees only (No decimals)", 195, finalY + 35.5, { align: "right" });
+
+      const bottomY = finalY + 45;
+      doc.setDrawColor(240, 230, 225);
+      doc.line(10, bottomY, 200, bottomY);
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(114, 32, 42);
+      doc.text("Thank you for visiting Ekara Beauty Salon & Academy! Call/WhatsApp: 8840647450", 105, bottomY + 5, { align: "center" });
+
+      return { doc, fileName: "Ekara_Bill_" + name.replace(/\s+/g, '_') + ".pdf", invoiceNo };
+    }
+
+    function openClientWhatsAppChat() {
+      const name = document.getElementById("clientNameInput").value.trim() || "Ma'am";
+      let phone = document.getElementById("clientPhoneInput").value.trim().replace(/\D/g, "");
+
+      if (!phone) {
+        alert("Please enter the client's 10-digit WhatsApp Number first!");
+        document.getElementById("clientPhoneInput").focus();
+        return;
+      }
+
+      if (phone.length === 10) phone = "91" + phone;
+
+      const shortGreeting = `*EKARA BEAUTY SALON & ACADEMY* 🌸\nDear ${name}, thank you for visiting us today!\n📍 *Salon Map Location:* https://maps.app.goo.gl/UZvL7W19Ex72A3UB6`;
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(shortGreeting)}`;
+      window.open(waUrl, "_blank");
+    }
+
+    async function sharePurePDFFile() {
+      const { doc, fileName } = createInvoicePDFDoc();
+      const pdfBlob = doc.output("blob");
+      const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        try {
+          await navigator.share({
+            files: [pdfFile]
+          });
+          return;
+        } catch (err) {
+          console.log("Share cancelled or fallback needed:", err);
+        }
+      }
+
+      doc.save(fileName);
+      alert("PDF File ('" + fileName + "') has been downloaded! Attach it in WhatsApp.");
+    }
+
+    function viewOrDownloadPDF() {
+      const { doc, fileName } = createInvoicePDFDoc();
+      const pdfBlob = doc.output("blob");
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      window.open(blobUrl, "_blank");
+    }
+
+    function finishAndFreeChair() {
+      const chair = activeChairs[currentChair];
+      const name = document.getElementById("clientNameInput").value.trim() || "Walk-in";
+      const phone = document.getElementById("clientPhoneInput").value.trim();
+      const address = document.getElementById("clientAddressInput").value.trim();
+      const calc = calculateFinalBill();
+
+      try {
+        let history = JSON.parse(localStorage.getItem("ekara_billing_history") || "[]");
+        history.unshift({
+          id: "EKA-" + Date.now().toString().slice(-6),
+          timestamp: Date.now(),
+          dateStr: new Date().toLocaleDateString("en-IN", { day: '2-digit', month: 'short' }),
+          chair: currentChair,
+          clientName: name,
+          phone: phone,
+          address: address,
+          items: [...chair.items],
+          total: Math.round(calc.netPayable)
+        });
+        localStorage.setItem("ekara_billing_history", JSON.stringify(history));
+      } catch(e) {}
+
+      activeChairs[currentChair] = { clientName: "", phone: "", address: "", items: [], discountPct: 0, customDiscount: 0 };
+      saveActiveChairs();
+
+      document.getElementById("checkoutModal").classList.add("hidden");
+      renderChairSelector();
+      renderActiveChairCard();
+      renderServices();
+      updateBottomBar();
+
+      alert(`Chair ${currentChair} is now Checked Out and FREE for the next client!`);
+    }
+
+    function openRateManager() {
+      renderRateManagerList();
+      document.getElementById("rateManagerModal").classList.remove("hidden");
+    }
+
+    function closeRateManager() {
+      document.getElementById("rateManagerModal").classList.add("hidden");
+      renderServices();
+      updateBottomBar();
+    }
+
+    function renderRateManagerList() {
+      const container = document.getElementById("rateManagerList");
+      const q = (document.getElementById("rateSearchInput").value || "").toLowerCase().trim();
+
+      const filtered = services.filter(s => s.name.toLowerCase().includes(q) || s.sub.toLowerCase().includes(q));
+
+      container.innerHTML = filtered.map(s => `
+        <div class="p-2 bg-stone-50 rounded-xl border border-stone-200 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-stone-900">${s.name}</span>
+            <span class="text-[10px] text-stone-400 font-mono">${s.id}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-stone-500 block">Original MRP (₹)</label>
+              <input type="number" value="${Math.round(s.mrp)}" onchange="updateServiceRate('${s.id}', 'mrp', this.value)" class="w-full bg-white border border-stone-300 rounded-lg px-2 py-1 text-xs font-semibold">
+            </div>
+            <div>
+              <label class="text-[10px] text-stone-500 block">Your Price (₹)</label>
+              <input type="number" value="${Math.round(s.price)}" onchange="updateServiceRate('${s.id}', 'price', this.value)" class="w-full bg-white border border-stone-300 rounded-lg px-2 py-1 text-xs font-bold text-rose-800">
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function updateServiceRate(serviceId, field, newVal) {
+      const s = services.find(it => it.id === serviceId);
+      if (s) {
+        s[field] = Math.round(Number(newVal) || 0);
+        localStorage.setItem("ekara_custom_services", JSON.stringify(services));
+      }
+    }
+
+    function resetDefaultRates() {
+      if (confirm("Reset all service prices back to Ekara default rate card?")) {
+        services = [...DEFAULT_SERVICES];
+        localStorage.removeItem("ekara_custom_services");
+        renderRateManagerList();
+        renderServices();
+        alert("Rates reset successfully!");
+      }
+    }
+
+    function openHistoryModal() {
+      purgeOldHistory();
+      const container = document.getElementById("historyList");
+      let history = JSON.parse(localStorage.getItem("ekara_billing_history") || "[]");
+
+      if (history.length === 0) {
+        container.innerHTML = `<div class="py-8 text-center text-xs text-stone-400">No completed orders in the last 30 days.</div>`;
+      } else {
+        container.innerHTML = history.map(h => `
+          <div class="py-2.5 first:pt-0">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-stone-900">${h.clientName}</span>
+                <span class="text-[10px] text-stone-400 ml-1.5">${h.dateStr} • Chair ${h.chair}</span>
+              </div>
+              <span class="font-extrabold text-stone-900">₹${Math.round(h.total)}</span>
+            </div>
+            <div class="text-[11px] text-stone-500 mt-0.5">${h.items.map(it => it.name + ' (x' + it.qty + ')').join(", ")}</div>
+          </div>
+        `).join("");
+      }
+
+      document.getElementById("historyModal").classList.remove("hidden");
+    }
+
+    function closeHistoryModal() {
+      document.getElementById("historyModal").classList.add("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>
